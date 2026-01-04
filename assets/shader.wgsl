@@ -1,0 +1,77 @@
+#import bevy_pbr::{
+    forward_io::{FragmentOutput, VertexOutput},
+    mesh_bindings::mesh,
+    pbr_fragment::pbr_input_from_standard_material,
+    pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
+}
+#import bevy_render::bindless::{bindless_samplers_filtering, bindless_textures_2d}
+
+#import bevy_pbr::pbr_bindings::{material_array, material_indices}
+
+struct BlendedPbrIndices {
+    material: u32,
+    blend_a: u32,
+    blend_a_sampler: u32,
+    blend_b: u32,
+    blend_b_sampler: u32,
+}
+
+struct BlendedPbr {
+    strength: f32,
+}
+
+
+@group(#{MATERIAL_BIND_GROUP}) @binding(100) var<storage> example_extended_material_indices:
+    array<BlendedPbrIndices>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(101) var<storage> example_extended_material:
+    array<BlendedPbr>;
+
+
+@fragment
+fn fragment(
+    in: VertexOutput,
+    @builtin(front_facing) is_front: bool,
+) -> FragmentOutput {
+    // Fetch the material slot. We'll use this in turn to fetch the bindless
+    // indices from `example_extended_material_indices`.
+    let slot = mesh[in.instance_index].material_and_lightmap_bind_group_slot & 0xffffu;
+
+    // Generate a `PbrInput` struct from the `StandardMaterial` bindings.
+    var pbr_input = pbr_input_from_standard_material(in, is_front);
+
+    // Calculate the UV for the texture we're about to sample.
+    let uv_transform = material_array[material_indices[slot].material].uv_transform;
+    let uv = (uv_transform * vec3(in.uv, 1.0)).xy;
+
+    // Multiply the base color by the `modulate_texture` and `modulate_color`.
+    // Notice how we fetch the texture, sampler, and plain extended material
+    // data from the appropriate arrays.
+    let blend_a = textureSample(
+        bindless_textures_2d[example_extended_material_indices[slot].blend_a],
+        bindless_samplers_filtering[
+            example_extended_material_indices[slot].blend_a_sampler
+        ],
+        uv
+    );
+    let blend_b = textureSample(
+        bindless_textures_2d[example_extended_material_indices[slot].blend_b],
+        bindless_samplers_filtering[
+            example_extended_material_indices[slot].blend_b_sampler
+        ],
+        uv
+    );
+    let strength = example_extended_material[example_extended_material_indices[slot].material].strength;
+
+    let blend = blend_b * strength + blend_a * (1.0 - strength);
+    pbr_input.material.base_color *= blend;
+
+
+    var out: FragmentOutput;
+    // Apply lighting.
+    out.color = apply_pbr_lighting(pbr_input);
+    // Apply in-shader post processing (fog, alpha-premultiply, and also
+    // tonemapping, debanding if the camera is non-HDR). Note this does not
+    // include fullscreen postprocessing effects like bloom.
+    out.color = main_pass_post_lighting_processing(pbr_input, out.color);
+    return out;
+}
