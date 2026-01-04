@@ -1,9 +1,6 @@
-//! Demonstrates bindless `ExtendedMaterial`.
-
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::{
-    color::palettes::tailwind::GRAY_600,
     mesh::{SphereKind, SphereMeshBuilder},
     pbr::{ExtendedMaterial, MaterialExtension, MeshMaterial3d},
     prelude::*,
@@ -16,16 +13,20 @@ static SHADER_ASSET_PATH: &str = "shader.wgsl";
 
 #[derive(Asset, Clone, Reflect, AsBindGroup)]
 #[data(50, GpuBlendedPbr, binding_array(101))]
-#[bindless(index_table(range(50..55), binding(100)))]
+#[bindless(index_table(range(50..57), binding(100)))]
 struct BlendedPbr {
     strength: f32,
 
     #[texture(51)]
     #[sampler(52)]
-    blend_a: Option<Handle<Image>>,
+    mask: Option<Handle<Image>>,
 
     #[texture(53)]
     #[sampler(54)]
+    blend_a: Option<Handle<Image>>,
+
+    #[texture(55)]
+    #[sampler(56)]
     blend_b: Option<Handle<Image>>,
 }
 
@@ -83,6 +84,7 @@ fn setup(
             },
             extension: BlendedPbr {
                 strength: 0.75,
+                mask: Some(asset_server.load("galvanic.jpg")),
                 blend_a: Some(asset_server.load("uv_checker_bw.png")),
                 blend_b: Some(asset_server.load("cobblestone_pavement_diff_2k.jpg")),
             },

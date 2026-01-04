@@ -10,6 +10,8 @@
 
 struct BlendedPbrIndices {
     material: u32,
+    mask: u32,
+    mask_sampler: u32,
     blend_a: u32,
     blend_a_sampler: u32,
     blend_b: u32,
@@ -39,13 +41,17 @@ fn fragment(
     // Generate a `PbrInput` struct from the `StandardMaterial` bindings.
     var pbr_input = pbr_input_from_standard_material(in, is_front);
 
-    // Calculate the UV for the texture we're about to sample.
     let uv_transform = material_array[material_indices[slot].material].uv_transform;
     let uv = (uv_transform * vec3(in.uv, 1.0)).xy;
 
-    // Multiply the base color by the `modulate_texture` and `modulate_color`.
-    // Notice how we fetch the texture, sampler, and plain extended material
-    // data from the appropriate arrays.
+    let mask = textureSample(
+        bindless_textures_2d[example_extended_material_indices[slot].mask],
+        bindless_samplers_filtering[
+            example_extended_material_indices[slot].mask_sampler
+        ],
+        uv
+    );
+
     let blend_a = textureSample(
         bindless_textures_2d[example_extended_material_indices[slot].blend_a],
         bindless_samplers_filtering[
@@ -60,9 +66,8 @@ fn fragment(
         ],
         uv
     );
-    let strength = example_extended_material[example_extended_material_indices[slot].material].strength;
 
-    let blend = blend_b * strength + blend_a * (1.0 - strength);
+    let blend = blend_b * mask + blend_a * (1.0 - mask);
     pbr_input.material.base_color *= blend;
 
 
