@@ -43,13 +43,14 @@ fn fragment(
 
     let uv_transform = material_array[material_indices[slot].material].uv_transform;
     let uv = (uv_transform * vec3(in.uv, 1.0)).xy;
+    let uv_b = (uv_transform * vec3(in.uv_b, 1.0)).xy;
 
     let indices = blended_pbr_indices[slot];
 
     let mask = textureSample(
         bindless_textures_2d[indices.mask],
         bindless_samplers_filtering[indices.mask_sampler],
-        uv
+        uv_b
     );
 
     let blend_a = textureSample(

@@ -68,15 +68,26 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, BlendedPbr>>>,
 ) {
-    // Create a gray sphere, modulated with a red-tinted Bevy logo.
+    let mut mesh = Mesh::from(SphereMeshBuilder::new(
+        1.0,
+        SphereKind::Uv {
+            sectors: 20,
+            stacks: 20,
+        },
+    ));
+    let bevy::mesh::VertexAttributeValues::Float32x2(uv0) =
+        mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap()
+    else {
+        unreachable!()
+    };
+    mesh.insert_attribute(
+        Mesh::ATTRIBUTE_UV_1,
+        uv0.iter()
+            .map(|uv| [uv[0].lerp(1.0, 0.5), uv[1].lerp(1.0, 0.5)])
+            .collect::<Vec<_>>(),
+    );
     commands.spawn((
-        Mesh3d(meshes.add(SphereMeshBuilder::new(
-            1.0,
-            SphereKind::Uv {
-                sectors: 20,
-                stacks: 20,
-            },
-        ))),
+        Mesh3d(meshes.add(mesh)),
         MeshMaterial3d(materials.add(ExtendedMaterial {
             base: StandardMaterial {
                 base_color: Color::WHITE,
