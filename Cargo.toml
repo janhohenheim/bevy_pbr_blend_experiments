@@ -4,4 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", version = "0.18.0-dev", features = ["jpeg"] }
+bevy = { version = "0.18.0", features = ["jpeg", "debug", "free_camera"] }
+bevy-inspector-egui = "0.36.0"
+
+# Enable a small amount of optimization in the dev profile.
+[profile.dev]
+opt-level = 0
+
+# Enable a large amount of optimization in the dev profile for dependencies.
+[profile.dev.package."*"]
+opt-level = 3
