@@ -3,8 +3,11 @@ use std::f32::consts::FRAC_PI_2;
 use bevy::{
     asset::io::embedded::GetAssetServer,
     camera_controller::free_camera::{FreeCamera, FreeCameraPlugin},
+    gltf::{GltfLoaderSettings, GltfPlugin, convert_coordinates::GltfConvertCoordinates},
+    image::{ImageAddressMode, ImageLoaderSettings, ImageSamplerDescriptor},
     mesh::{SphereKind, SphereMeshBuilder},
-    pbr::{ExtendedMaterial, MaterialExtension, MeshMaterial3d},
+    pbr::{Atmosphere, ExtendedMaterial, MaterialExtension, MeshMaterial3d, ScatteringMedium},
+    post_process::bloom::Bloom,
     prelude::*,
     render::render_resource::{AsBindGroup, ShaderType},
     scene::SceneInstanceReady,
@@ -56,7 +59,31 @@ impl<'a> From<&'a BlendedPbr> for GpuBlendedPbr {
 /// The entry point.
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, FreeCameraPlugin))
+        .add_plugins((
+            DefaultPlugins
+                .set(ImagePlugin {
+                    default_sampler: ImageSamplerDescriptor {
+                        address_mode_u: ImageAddressMode::Repeat,
+                        address_mode_v: ImageAddressMode::Repeat,
+                        address_mode_w: ImageAddressMode::Repeat,
+                        ..ImageSamplerDescriptor::linear()
+                    },
+                })
+                .set(GltfPlugin {
+                    default_sampler: ImageSamplerDescriptor {
+                        address_mode_u: ImageAddressMode::Repeat,
+                        address_mode_v: ImageAddressMode::Repeat,
+                        address_mode_w: ImageAddressMode::Repeat,
+                        ..ImageSamplerDescriptor::linear()
+                    },
+                    convert_coordinates: GltfConvertCoordinates {
+                        rotate_scene_entity: true,
+                        rotate_meshes: true,
+                    },
+                    ..default()
+                }),
+            FreeCameraPlugin,
+        ))
         .add_plugins(EguiPlugin::default())
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(MaterialPlugin::<
@@ -64,9 +91,10 @@ fn main() {
         >::default())
         .add_systems(Update, load_assets)
         .add_systems(Update, fuck)
-        .add_systems(Startup, setup)
         .init_asset::<AppAssets>()
         .add_observer(process_assets)
+        .add_observer(setup_camera)
+        .insert_resource(GlobalAmbientLight::NONE)
         .run();
 }
 
@@ -78,18 +106,35 @@ struct AppAssets {
     brick_material: Handle<StandardMaterial>,
     #[dependency]
     render_material: Handle<StandardMaterial>,
+    #[dependency]
+    wear_mask: Handle<Image>,
 }
 
 impl FromWorld for AppAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.get_asset_server();
         Self {
-            level: assets.load("models/test.gltf"),
-
+            level: assets.load_with_settings(
+                "models/test.gltf",
+                |settings: &mut GltfLoaderSettings| {
+                    settings.load_lights = true;
+                    settings.load_cameras = true;
+                },
+            ),
             brick_material: assets.add(StandardMaterial {
                 base_color_texture: assets.load("models/brick_basecolor.png").into(),
-                normal_map_texture: assets.load("models/brick_normal.png").into(),
-                occlusion_texture: assets.load("models/brick_arm.png").into(),
+                normal_map_texture: assets
+                    .load_with_settings(
+                        "models/brick_normal.png",
+                        |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
+                    )
+                    .into(),
+                occlusion_texture: assets
+                    .load_with_settings(
+                        "models/brick_arm.png",
+                        |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
+                    )
+                    .into(),
                 metallic_roughness_texture: assets.load("models/brick_arm.png").into(),
                 metallic: 1.0,
                 perceptual_roughness: 1.0,
@@ -97,13 +142,29 @@ impl FromWorld for AppAssets {
             }),
             render_material: assets.add(StandardMaterial {
                 base_color_texture: assets.load("models/render_basecolor.png").into(),
-                normal_map_texture: assets.load("models/render_normal.png").into(),
-                occlusion_texture: assets.load("models/render_arm.png").into(),
+                normal_map_texture: assets
+                    .load_with_settings(
+                        "models/render_normal.png",
+                        |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
+                    )
+                    .into(),
+                occlusion_texture: assets
+                    .load_with_settings(
+                        "models/render_arm.png",
+                        |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
+                    )
+                    .into(),
                 metallic_roughness_texture: assets.load("models/render_arm.png").into(),
                 metallic: 1.0,
                 perceptual_roughness: 1.0,
                 ..default()
             }),
+            wear_mask: assets
+                .load_with_settings(
+                    "models/wear_mask.png",
+                    |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
+                )
+                .into(),
         }
     }
 }
@@ -162,7 +223,8 @@ fn process_assets(
                   mut commands: Commands,
                   assets: Res<AssetServer>,
                   children: Query<&Children>,
-                  names: Query<(Entity, &Name)>| {
+                  names: Query<(Entity, &Name)>,
+                  app_assets: Res<AppAssets>| {
                 for (entity, name) in names.iter_many(children.iter_descendants(ready.entity)) {
                     if name.to_lowercase().ends_with("img_render_basecolor.png") {
                         commands
@@ -175,9 +237,9 @@ fn process_assets(
                                 },
                                 extension: BlendedPbr {
                                     strength: 0.75,
-                                    mask: Some(assets.load("galvanic.jpg")),
-                                    blend_a: brick.base_color_texture.clone(),
-                                    blend_b: render.base_color_texture.clone(),
+                                    mask: Some(app_assets.wear_mask.clone()),
+                                    blend_a: render.base_color_texture.clone(),
+                                    blend_b: brick.base_color_texture.clone(),
                                 },
                             })));
                     }
@@ -190,15 +252,14 @@ fn process_assets(
     */
 }
 
-fn setup(mut commands: Commands) {
-    commands.spawn((
-        DirectionalLight::default(),
-        Transform::from_xyz(1.0, 1.0, 1.0).looking_at(Vec3::ZERO, Vec3::Y),
-    ));
-
-    commands.spawn((
-        Camera3d::default(),
+fn setup_camera(
+    add: On<Add, Camera3d>,
+    mut commands: Commands,
+    mut scatter_media: ResMut<Assets<ScatteringMedium>>,
+) {
+    commands.entity(add.entity).insert((
         FreeCamera::default(),
-        Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Bloom::NATURAL,
+        Atmosphere::earthlike(scatter_media.add(ScatteringMedium::default())),
     ));
 }
