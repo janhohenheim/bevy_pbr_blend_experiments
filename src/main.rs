@@ -20,7 +20,7 @@ static SHADER_ASSET_PATH: &str = "shader.wgsl";
 
 #[derive(Asset, Clone, Reflect, AsBindGroup)]
 #[data(50, GpuBlendedPbr, binding_array(101))]
-#[bindless(index_table(range(50..57), binding(100)))]
+#[bindless(index_table(range(50..55), binding(100)))]
 struct BlendedPbr {
     strength: f32,
 
@@ -28,13 +28,9 @@ struct BlendedPbr {
     #[sampler(52)]
     mask: Option<Handle<Image>>,
 
-    #[texture(53)]
+    #[texture(53, dimension = "2d_array")]
     #[sampler(54)]
-    blend_a: Option<Handle<Image>>,
-
-    #[texture(55)]
-    #[sampler(56)]
-    blend_b: Option<Handle<Image>>,
+    base_color_texture: Option<Handle<Image>>,
 }
 
 #[derive(Clone, Default, ShaderType)]
@@ -238,8 +234,9 @@ fn process_assets(
                                 extension: BlendedPbr {
                                     strength: 0.75,
                                     mask: Some(app_assets.wear_mask.clone()),
-                                    blend_a: render.base_color_texture.clone(),
-                                    blend_b: brick.base_color_texture.clone(),
+                                    base_color_texture: Some(
+                                        assets.load("textures/base_color.ktx2"),
+                                    ),
                                 },
                             })));
                     }

@@ -4,7 +4,7 @@
     pbr_fragment::pbr_input_from_standard_material,
     pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
 }
-#import bevy_render::bindless::{bindless_samplers_filtering, bindless_textures_2d}
+#import bevy_render::bindless::{bindless_samplers_filtering, bindless_textures_2d, bindless_textures_2d_array}
 
 #import bevy_pbr::pbr_bindings::{material_array, material_indices}
 
@@ -12,10 +12,8 @@ struct BlendedPbrIndices {
     material: u32,
     mask: u32,
     mask_sampler: u32,
-    blend_a: u32,
-    blend_a_sampler: u32,
-    blend_b: u32,
-    blend_b_sampler: u32,
+    base_color_texture_index: u32,
+    base_color_sampler_index: u32,
 }
 
 struct BlendedPbr {
@@ -53,17 +51,21 @@ fn fragment(
         uv_b
     );
 
+    let base_color_array = bindless_textures_2d_array[indices.base_color_texture_index];
+    let base_color_sampler = bindless_samplers_filtering[indices.base_color_sampler_index];
+
     let blend_a = textureSample(
-        bindless_textures_2d[indices.blend_a],
-        bindless_samplers_filtering[indices.blend_a_sampler],
-        uv
+        base_color_array,
+        base_color_sampler,
+        uv,
+        0
     );
     let blend_b = textureSample(
-        bindless_textures_2d[indices.blend_b],
-        bindless_samplers_filtering[indices.blend_b_sampler],
-        uv
+        base_color_array,
+        base_color_sampler,
+        uv,
+        1
     );
-
     let blend = blend_b * mask + blend_a * (1.0 - mask);
     pbr_input.material.base_color *= blend;
 
