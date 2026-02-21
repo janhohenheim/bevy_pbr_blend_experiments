@@ -171,7 +171,7 @@
 	],
 	"materials":[
 		{
-			"name":"IMG_brick_basecolor.png",
+			"name":"../textures/raw/IMG_brick_basecolor.png",
 			"normalTexture":{
 				"index":0
 			},
@@ -188,7 +188,7 @@
 			}
 		},
 		{
-			"name":"IMG_render_basecolor.png",
+			"name":"../textures/raw/IMG_render_basecolor.png",
 			"normalTexture":{
 				"index":3
 			},
@@ -310,32 +310,32 @@
 		{
 			"mimeType":"image/png",
 			"name":"brick_normal",
-			"uri":"brick_normal.png"
+			"uri":"../textures/raw/brick_normal.png"
 		},
 		{
 			"mimeType":"image/png",
 			"name":"brick_arm",
-			"uri":"brick_arm.png"
+			"uri":"../textures/raw/brick_arm.png"
 		},
 		{
 			"mimeType":"image/png",
 			"name":"brick_basecolor",
-			"uri":"brick_basecolor.png"
+			"uri":"../textures/raw/brick_basecolor.png"
 		},
 		{
 			"mimeType":"image/png",
 			"name":"render_normal",
-			"uri":"render_normal.png"
+			"uri":"../textures/raw/render_normal.png"
 		},
 		{
 			"mimeType":"image/png",
 			"name":"render_arm",
-			"uri":"render_arm.png"
+			"uri":"../textures/raw/render_arm.png"
 		},
 		{
 			"mimeType":"image/png",
 			"name":"render_basecolor",
-			"uri":"render_basecolor.png"
+			"uri":"../textures/raw/render_basecolor.png"
 		},
 		{
 			"mimeType":"image/png",

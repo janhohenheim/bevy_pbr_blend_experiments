@@ -62,6 +62,7 @@ fn main() {
                         address_mode_u: ImageAddressMode::Repeat,
                         address_mode_v: ImageAddressMode::Repeat,
                         address_mode_w: ImageAddressMode::Repeat,
+                        anisotropy_clamp: 16,
                         ..ImageSamplerDescriptor::linear()
                     },
                 })
@@ -70,6 +71,7 @@ fn main() {
                         address_mode_u: ImageAddressMode::Repeat,
                         address_mode_v: ImageAddressMode::Repeat,
                         address_mode_w: ImageAddressMode::Repeat,
+                        anisotropy_clamp: 16,
                         ..ImageSamplerDescriptor::linear()
                     },
                     convert_coordinates: GltfConvertCoordinates {
@@ -99,10 +101,6 @@ struct AppAssets {
     #[dependency]
     level: Handle<Gltf>,
     #[dependency]
-    brick_material: Handle<StandardMaterial>,
-    #[dependency]
-    render_material: Handle<StandardMaterial>,
-    #[dependency]
     wear_mask: Handle<Image>,
 }
 
@@ -117,47 +115,9 @@ impl FromWorld for AppAssets {
                     settings.load_cameras = true;
                 },
             ),
-            brick_material: assets.add(StandardMaterial {
-                base_color_texture: assets.load("models/brick_basecolor.png").into(),
-                normal_map_texture: assets
-                    .load_with_settings(
-                        "models/brick_normal.png",
-                        |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
-                    )
-                    .into(),
-                occlusion_texture: assets
-                    .load_with_settings(
-                        "models/brick_arm.png",
-                        |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
-                    )
-                    .into(),
-                metallic_roughness_texture: assets.load("models/brick_arm.png").into(),
-                metallic: 1.0,
-                perceptual_roughness: 1.0,
-                ..default()
-            }),
-            render_material: assets.add(StandardMaterial {
-                base_color_texture: assets.load("models/render_basecolor.png").into(),
-                normal_map_texture: assets
-                    .load_with_settings(
-                        "models/render_normal.png",
-                        |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
-                    )
-                    .into(),
-                occlusion_texture: assets
-                    .load_with_settings(
-                        "models/render_arm.png",
-                        |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
-                    )
-                    .into(),
-                metallic_roughness_texture: assets.load("models/render_arm.png").into(),
-                metallic: 1.0,
-                perceptual_roughness: 1.0,
-                ..default()
-            }),
             wear_mask: assets
                 .load_with_settings(
-                    "models/wear_mask.png",
+                    "textures/raw/wear_mask.png",
                     |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
                 )
                 .into(),
@@ -206,11 +166,8 @@ fn process_assets(
     mut commands: Commands,
     gltfs: Res<Assets<Gltf>>,
     app_assets: Res<AppAssets>,
-    std_mats: Res<Assets<StandardMaterial>>,
 ) {
     let gltf = gltfs.get(&app_assets.level).unwrap();
-    let brick = std_mats.get(&app_assets.brick_material).unwrap().clone();
-    let render = std_mats.get(&app_assets.render_material).unwrap().clone();
 
     commands
         .spawn(SceneRoot(gltf.default_scene.clone().unwrap()))
