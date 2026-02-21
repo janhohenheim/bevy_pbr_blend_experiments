@@ -1,12 +1,13 @@
 #import bevy_pbr::{
     forward_io::{FragmentOutput, VertexOutput},
     mesh_bindings::mesh,
+    mesh_view_bindings::view,
     pbr_fragment::pbr_input_from_standard_material,
-    pbr_functions::{apply_pbr_lighting, apply_normal_mapping, main_pass_post_lighting_processing},
+    pbr_functions::{apply_pbr_lighting, apply_normal_mapping, main_pass_post_lighting_processing, SampleBias},
+    pbr_bindings::{material_array, material_indices},
 }
 #import bevy_render::bindless::{bindless_samplers_filtering, bindless_textures_2d, bindless_textures_2d_array}
 
-#import bevy_pbr::pbr_bindings::{material_array, material_indices}
 
 struct BlendedPbrIndices {
     material: u32,
@@ -21,6 +22,7 @@ struct BlendedPbrIndices {
 }
 
 struct BlendedPbr {
+    // unused for now :)
     strength: f32,
 }
 
@@ -41,25 +43,32 @@ fn fragment(
     var pbr_input = pbr_input_from_standard_material(in, is_front);
 
     let uv_transform = material_array[material_indices[slot].material].uv_transform;
-    let uv = (uv_transform * vec3(in.uv, 1.0)).xy;
-    let uv_b = (uv_transform * vec3(in.uv_b, 1.0)).xy;
+    var uv = (uv_transform * vec3(in.uv, 1.0)).xy;
+    var uv_b = (uv_transform * vec3(in.uv_b, 1.0)).xy;
 
     let indices = blended_pbr_indices[slot];
     let mask_texture = bindless_textures_2d[indices.mask];
     let mask_sampler = bindless_samplers_filtering[indices.mask_sampler];
 
-    let base_color_array = bindless_textures_2d_array[indices.base_color_texture_index];
-    let base_color_sampler = bindless_samplers_filtering[indices.base_color_sampler_index];
+    // Base Color
+    pbr_input.material.base_color *= laplace_blend(
+        bindless_textures_2d_array[indices.base_color_texture_index],
+      bindless_samplers_filtering[indices.base_color_sampler_index],
+      uv,
+      mask_texture,
+      mask_sampler,
+      uv_b
+    );
 
-    let normal_array = bindless_textures_2d_array[indices.normal_texture_index];
-    let normal_sampler = bindless_samplers_filtering[indices.normal_sampler_index];
-
-    let arm_array = bindless_textures_2d_array[indices.arm_texture_index];
-    let arm_sampler = bindless_samplers_filtering[indices.arm_sampler_index];
-
-    pbr_input.material.base_color *= laplace_blend(base_color_array, base_color_sampler, uv, mask_texture, mask_sampler, uv_b);
-
-    let blended_normal_raw = laplace_blend(normal_array, normal_sampler, uv, mask_texture, mask_sampler, uv_b).rgb;
+    // Normals
+    let blended_normal_raw = laplace_blend(
+        bindless_textures_2d_array[indices.normal_texture_index],
+        bindless_samplers_filtering[indices.normal_sampler_index],
+        uv,
+        mask_texture,
+        mask_sampler,
+        uv_b
+    ).rgb;
     let TBN = bevy_pbr::pbr_functions::calculate_tbn_mikktspace(
         pbr_input.world_normal,
         in.world_tangent,
@@ -71,7 +80,16 @@ fn fragment(
         is_front,
         blended_normal_raw.rgb,
     );
-    let arm = laplace_blend(arm_array, arm_sampler, uv, mask_texture, mask_sampler, uv_b);
+
+    // Linear
+    let arm = laplace_blend(
+         bindless_textures_2d_array[indices.arm_texture_index],
+        bindless_samplers_filtering[indices.arm_sampler_index],
+        uv,
+        mask_texture,
+        mask_sampler,
+        uv_b
+    );
 
     pbr_input.material.perceptual_roughness *= arm.g;
     pbr_input.material.metallic *= arm.b;
