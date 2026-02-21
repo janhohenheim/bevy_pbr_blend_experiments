@@ -66,7 +66,7 @@ fn fragment(
         uv,
         1
     );
-    let blend = blend_b * mask + blend_a * (1.0 - mask);
+    let blend = blend_a * mask + blend_b * (1.0 - mask);
     pbr_input.material.base_color *= blend;
 
 
