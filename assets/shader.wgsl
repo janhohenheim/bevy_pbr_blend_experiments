@@ -2,7 +2,7 @@
     forward_io::{FragmentOutput, VertexOutput},
     mesh_bindings::mesh,
     pbr_fragment::pbr_input_from_standard_material,
-    pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
+    pbr_functions::{apply_pbr_lighting, apply_normal_mapping, main_pass_post_lighting_processing},
 }
 #import bevy_render::bindless::{bindless_samplers_filtering, bindless_textures_2d, bindless_textures_2d_array}
 
@@ -36,11 +36,8 @@ fn fragment(
     in: VertexOutput,
     @builtin(front_facing) is_front: bool,
 ) -> FragmentOutput {
-    // Fetch the material slot. We'll use this in turn to fetch the bindless
-    // indices from `blended_pbr_indices`.
     let slot = mesh[in.instance_index].material_and_lightmap_bind_group_slot & 0xffffu;
 
-    // Generate a `PbrInput` struct from the `StandardMaterial` bindings.
     var pbr_input = pbr_input_from_standard_material(in, is_front);
 
     let uv_transform = material_array[material_indices[slot].material].uv_transform;
@@ -48,77 +45,73 @@ fn fragment(
     let uv_b = (uv_transform * vec3(in.uv_b, 1.0)).xy;
 
     let indices = blended_pbr_indices[slot];
-
-    let mask = textureSample(
-        bindless_textures_2d[indices.mask],
-        bindless_samplers_filtering[indices.mask_sampler],
-        uv_b
-    ).r;
+    let mask_texture = bindless_textures_2d[indices.mask];
+    let mask_sampler = bindless_samplers_filtering[indices.mask_sampler];
 
     let base_color_array = bindless_textures_2d_array[indices.base_color_texture_index];
     let base_color_sampler = bindless_samplers_filtering[indices.base_color_sampler_index];
 
-    let base_color_a = textureSample(
-        base_color_array,
-        base_color_sampler,
-        uv,
-        0
-    );
-    let base_color_b = textureSample(
-        base_color_array,
-        base_color_sampler,
-        uv,
-        1
-    );
-
-
     let normal_array = bindless_textures_2d_array[indices.normal_texture_index];
     let normal_sampler = bindless_samplers_filtering[indices.normal_sampler_index];
-
-    let normal_a = textureSample(
-        normal_array,
-        normal_sampler,
-        uv,
-        0
-    ).rgb;
-    let normal_b = textureSample(
-        normal_array,
-        normal_sampler,
-        uv,
-        1
-    ).rgb;
 
     let arm_array = bindless_textures_2d_array[indices.arm_texture_index];
     let arm_sampler = bindless_samplers_filtering[indices.arm_sampler_index];
 
-    let arm_a = textureSample(
-        arm_array,
-        arm_sampler,
-        uv,
-        0
-    ).rgb;
-    let arm_b = textureSample(
-        arm_array,
-        arm_sampler,
-        uv,
-        1
-    ).rgb;
+    pbr_input.material.base_color *= laplace_blend(base_color_array, base_color_sampler, uv, mask_texture, mask_sampler, uv_b);
 
-    pbr_input.material.base_color *= base_color_a * mask + base_color_b * (1.0 - mask);
-    // Todo: this is not how normals are actually interpolated
-    pbr_input.N = normalize((normal_a * mask + normal_b * (1.0 - mask)));
-    pbr_input.material.perceptual_roughness *= arm_a.g * mask + arm_b.g * (1.0 - mask);
-    pbr_input.material.metallic *= arm_a.b * mask + arm_b.b * (1.0 - mask);
-    // Todo: I don't think this is how occlusion works lol
-    pbr_input.material.base_color *= arm_a.r * mask + arm_b.r * (1.0 - mask);
+    let blended_normal_raw = laplace_blend(normal_array, normal_sampler, uv, mask_texture, mask_sampler, uv_b).rgb;
+    let TBN = bevy_pbr::pbr_functions::calculate_tbn_mikktspace(
+        pbr_input.world_normal,
+        in.world_tangent,
+    );
+    pbr_input.N = apply_normal_mapping(
+        pbr_input.material.flags,
+        TBN,
+        false,
+        is_front,
+        blended_normal_raw.rgb,
+    );
+    let arm = laplace_blend(arm_array, arm_sampler, uv, mask_texture, mask_sampler, uv_b);
+
+    pbr_input.material.perceptual_roughness *= arm.g;
+    pbr_input.material.metallic *= arm.b;
+    pbr_input.diffuse_occlusion *= vec3(arm.r);
 
 
     var out: FragmentOutput;
-    // Apply lighting.
     out.color = apply_pbr_lighting(pbr_input);
-    // Apply in-shader post processing (fog, alpha-premultiply, and also
-    // tonemapping, debanding if the camera is non-HDR). Note this does not
-    // include fullscreen postprocessing effects like bloom.
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
     return out;
+}
+
+
+fn laplace_blend(texture_array: texture_2d_array<f32>, texture_sampler: sampler, uv: vec2<f32>, mask_texture: texture_2d<f32>, mask_sampler: sampler, uv_b: vec2<f32>) -> vec4<f32> {
+    const NUM_LEVELS: i32 = 4;
+
+    var tex0_levels: array<vec4<f32>, NUM_LEVELS + 1>;
+    var tex1_levels: array<vec4<f32>, NUM_LEVELS + 1>;
+    var mask_levels: array<f32, NUM_LEVELS + 1>;
+
+    for (var i: i32 = 0; i < NUM_LEVELS + 1; i += 1) {
+        let lod = f32(i);
+        tex0_levels[i] = textureSampleLevel(texture_array, texture_sampler, uv, 0, lod);
+        tex1_levels[i] = textureSampleLevel(texture_array, texture_sampler, uv, 1, lod);
+        mask_levels[i] = textureSampleLevel(mask_texture, mask_sampler, uv_b, lod).r;
+    }
+
+    var blended: vec4<f32> = vec4<f32>(0.0);
+
+    for (var i: i32 = 0; i < NUM_LEVELS; i += 1) {
+        let tex0_laplace = tex0_levels[i] - tex0_levels[i + 1];
+        let tex1_laplace = tex1_levels[i] - tex1_levels[i + 1];
+        blended += tex0_laplace * (1.0 - mask_levels[i]) +
+                tex1_laplace * mask_levels[i];
+    }
+
+    // Gaussian level.
+    let tex0_gauss = tex0_levels[NUM_LEVELS];
+    let tex1_gauss = tex1_levels[NUM_LEVELS];
+    blended += tex0_gauss * (1.0 - mask_levels[NUM_LEVELS]) +
+            tex1_gauss * mask_levels[NUM_LEVELS];
+    return blended;
 }

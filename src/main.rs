@@ -122,7 +122,7 @@ impl FromWorld for AppAssets {
             ),
             wear_mask: assets
                 .load_with_settings(
-                    "textures/raw/wear_mask.png",
+                    "textures/wear_mask.ktx2",
                     |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
                 )
                 .into(),

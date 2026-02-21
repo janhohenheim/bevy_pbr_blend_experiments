@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# TODO: replace with kram
+# Base Color
 ktx create \
   --format R8G8B8A8_SRGB \
   --assign-tf srgb \
@@ -18,6 +18,7 @@ kram encode \
   -o assets/textures/base_color.ktx2 \
   -i assets/temp/uncompressed_base_color.ktx2
 
+# Normals
 ktx create \
   --format R8G8B8_UNORM \
   --assign-tf linear \
@@ -33,22 +34,31 @@ kram encode \
   -o assets/textures/normal.ktx2 \
   -i assets/temp/normal.ktx2
 
-
+# Linear
 ktx create \
-  --format R8_UNORM \
+  --format R8G8B8_UNORM \
   --assign-tf linear \
   --layers 2 \
   assets/textures/raw/brick_arm.png \
   assets/textures/raw/render_arm.png \
   assets/temp/arm.ktx2
 kram encode \
-  -f bc4 \
+  -f bc7 \
   -type 2darray \
   -srclin  \
   -o assets/textures/arm.ktx2 \
   -i assets/temp/arm.ktx2
 
-rm -r assets/temp/
+ktx create \
+  --format R8_UNORM \
+  --assign-tf linear \
+  assets/textures/raw/wear_mask.png \
+  assets/temp/wear_mask.ktx2
+kram encode \
+  -f bc4 \
+  -type 2darray \
+  -srclin  \
+  -o assets/textures/wear_mask.ktx2 \
+  -i assets/temp/wear_mask.ktx2
 
-# TODO: fix this
-kram encode -f bc4 -type 2d -srclin -i assets/textures/raw/wear_mask.png -o assets/textures/wear_mask.ktx2
+# rm -r assets/temp/
