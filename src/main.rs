@@ -17,7 +17,7 @@ static SHADER_ASSET_PATH: &str = "shader.wgsl";
 
 #[derive(Asset, Clone, Reflect, AsBindGroup)]
 #[data(50, GpuBlendedPbr, binding_array(101))]
-#[bindless(index_table(range(50..55), binding(100)))]
+#[bindless(index_table(range(50..57), binding(100)))]
 struct BlendedPbr {
     strength: f32,
 
@@ -28,6 +28,10 @@ struct BlendedPbr {
     #[texture(53, dimension = "2d_array")]
     #[sampler(54)]
     base_color_texture: Option<Handle<Image>>,
+
+    #[texture(55, dimension = "2d_array")]
+    #[sampler(56)]
+    normal_texture: Option<Handle<Image>>,
 }
 
 #[derive(Clone, Default, ShaderType)]
@@ -183,6 +187,8 @@ fn process_assets(
                             .insert(MeshMaterial3d(assets.add(ExtendedMaterial {
                                 base: StandardMaterial {
                                     base_color: Color::WHITE,
+                                    perceptual_roughness: 1.0,
+                                    metallic: 1.0,
                                     ..default()
                                 },
                                 extension: BlendedPbr {
@@ -191,6 +197,7 @@ fn process_assets(
                                     base_color_texture: Some(
                                         assets.load("textures/base_color.ktx2"),
                                     ),
+                                    normal_texture: Some(assets.load("textures/normal.ktx2")),
                                 },
                             })));
                     }
@@ -212,5 +219,10 @@ fn setup_camera(
         FreeCamera::default(),
         Bloom::NATURAL,
         Atmosphere::earthlike(scatter_media.add(ScatteringMedium::default())),
+        PointLight {
+            shadows_enabled: true,
+            intensity: 10_000.0,
+            ..default()
+        },
     ));
 }

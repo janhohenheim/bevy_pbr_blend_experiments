@@ -14,6 +14,8 @@ struct BlendedPbrIndices {
     mask_sampler: u32,
     base_color_texture_index: u32,
     base_color_sampler_index: u32,
+    normal_texture_index: u32,
+    normal_sampler_index: u32,
 }
 
 struct BlendedPbr {
@@ -49,25 +51,44 @@ fn fragment(
         bindless_textures_2d[indices.mask],
         bindless_samplers_filtering[indices.mask_sampler],
         uv_b
-    );
+    ).r;
 
     let base_color_array = bindless_textures_2d_array[indices.base_color_texture_index];
     let base_color_sampler = bindless_samplers_filtering[indices.base_color_sampler_index];
 
-    let blend_a = textureSample(
+    let base_color_a = textureSample(
         base_color_array,
         base_color_sampler,
         uv,
         0
     );
-    let blend_b = textureSample(
+    let base_color_b = textureSample(
         base_color_array,
         base_color_sampler,
         uv,
         1
     );
-    let blend = blend_a * mask + blend_b * (1.0 - mask);
-    pbr_input.material.base_color *= blend;
+
+
+    let normal_array = bindless_textures_2d_array[indices.normal_texture_index];
+    let normal_sampler = bindless_samplers_filtering[indices.normal_sampler_index];
+
+    let normal_a = textureSample(
+        normal_array,
+        normal_sampler,
+        uv,
+        0
+    ).rgb;
+    let normal_b = textureSample(
+        normal_array,
+        normal_sampler,
+        uv,
+        1
+    ).rgb;
+
+    pbr_input.material.base_color *= base_color_a * mask + base_color_b * (1.0 - mask);
+    // Todo: this is not how normals are actually interpolated
+    pbr_input.N = normalize((normal_a * mask + normal_b * (1.0 - mask)));
 
 
     var out: FragmentOutput;

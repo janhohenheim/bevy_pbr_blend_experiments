@@ -18,7 +18,23 @@ kram encode \
   -o assets/textures/base_color.ktx2 \
   -i assets/temp/uncompressed_base_color.ktx2
 
-rm assets/temp/uncompressed_base_color.ktx2
+ktx create \
+  --format R8G8B8_UNORM \
+  --assign-tf linear \
+  --layers 2 \
+  assets/textures/raw/brick_normal.png \
+  assets/textures/raw/render_normal.png \
+  assets/temp/normal.ktx2
+
+kram encode \
+  -f bc5 \
+  -type 2darray \
+  -normal \
+  -o assets/textures/normal.ktx2 \
+  -i assets/temp/normal.ktx2
+
+
+rm -r assets/temp/
 
 # TODO: fix this
 kram encode -f bc4 -type 2d -srclin -i assets/textures/raw/wear_mask.png -o assets/textures/wear_mask.ktx2
