@@ -16,6 +16,8 @@ struct BlendedPbrIndices {
     base_color_sampler_index: u32,
     normal_texture_index: u32,
     normal_sampler_index: u32,
+    arm_texture_index: u32,
+    arm_sampler_index: u32,
 }
 
 struct BlendedPbr {
@@ -86,9 +88,29 @@ fn fragment(
         1
     ).rgb;
 
+    let arm_array = bindless_textures_2d_array[indices.arm_texture_index];
+    let arm_sampler = bindless_samplers_filtering[indices.arm_sampler_index];
+
+    let arm_a = textureSample(
+        arm_array,
+        arm_sampler,
+        uv,
+        0
+    ).rgb;
+    let arm_b = textureSample(
+        arm_array,
+        arm_sampler,
+        uv,
+        1
+    ).rgb;
+
     pbr_input.material.base_color *= base_color_a * mask + base_color_b * (1.0 - mask);
     // Todo: this is not how normals are actually interpolated
     pbr_input.N = normalize((normal_a * mask + normal_b * (1.0 - mask)));
+    pbr_input.material.perceptual_roughness *= arm_a.g * mask + arm_b.g * (1.0 - mask);
+    pbr_input.material.metallic *= arm_a.b * mask + arm_b.b * (1.0 - mask);
+    // Todo: I don't think this is how occlusion works lol
+    pbr_input.material.base_color *= arm_a.r * mask + arm_b.r * (1.0 - mask);
 
 
     var out: FragmentOutput;

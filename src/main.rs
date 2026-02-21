@@ -17,7 +17,7 @@ static SHADER_ASSET_PATH: &str = "shader.wgsl";
 
 #[derive(Asset, Clone, Reflect, AsBindGroup)]
 #[data(50, GpuBlendedPbr, binding_array(101))]
-#[bindless(index_table(range(50..57), binding(100)))]
+#[bindless(index_table(range(50..59), binding(100)))]
 struct BlendedPbr {
     strength: f32,
 
@@ -32,6 +32,10 @@ struct BlendedPbr {
     #[texture(55, dimension = "2d_array")]
     #[sampler(56)]
     normal_texture: Option<Handle<Image>>,
+
+    #[texture(57, dimension = "2d_array")]
+    #[sampler(58)]
+    arm_texture: Option<Handle<Image>>,
 }
 
 #[derive(Clone, Default, ShaderType)]
@@ -198,6 +202,7 @@ fn process_assets(
                                         assets.load("textures/base_color.ktx2"),
                                     ),
                                     normal_texture: Some(assets.load("textures/normal.ktx2")),
+                                    arm_texture: Some(assets.load("textures/arm.ktx2")),
                                 },
                             })));
                     }
