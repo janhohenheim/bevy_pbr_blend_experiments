@@ -5,6 +5,7 @@
     pbr_fragment::pbr_input_from_standard_material,
     pbr_functions::{apply_pbr_lighting, apply_normal_mapping, main_pass_post_lighting_processing, SampleBias},
     pbr_bindings::{material_array, material_indices},
+    pbr_types
 }
 #import bevy_render::bindless::{bindless_samplers_filtering, bindless_textures_2d, bindless_textures_2d_array}
 
@@ -73,10 +74,12 @@ fn fragment(
         pbr_input.world_normal,
         in.world_tangent,
     );
+
+    let double_sided = (pbr_input.material.flags & pbr_types::STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u;
     pbr_input.N = apply_normal_mapping(
         pbr_input.material.flags,
         TBN,
-        false,
+        double_sided,
         is_front,
         blended_normal_raw.rgb,
     );
@@ -93,9 +96,10 @@ fn fragment(
 
     pbr_input.material.perceptual_roughness *= arm.g;
     pbr_input.material.metallic *= arm.b;
-    pbr_input.diffuse_occlusion *= vec3(arm.r);
+    pbr_input.diffuse_occlusion *= arm.r;
 
 
+    // Apply PBR stuffs
     var out: FragmentOutput;
     out.color = apply_pbr_lighting(pbr_input);
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
