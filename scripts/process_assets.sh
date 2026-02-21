@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-target="$(pwd)/assets/textures"
-
-mkdir -p "$target"
-
+# TODO: replace with kram
 ktx create \
   --format R8G8B8A8_SRGB \
   --assign-tf srgb \
@@ -18,13 +15,15 @@ kram encode \
   -type 2darray \
   -srgb \
   -zstd 0 \
-  -o "$target/base_color.ktx2" \
+  -o assets/textures/base_color.ktx2 \
   -i assets/temp/uncompressed_base_color.ktx2
 
 rm assets/temp/uncompressed_base_color.ktx2
 
+# TODO: fix this
+kram encode -f bc4 -type 2d -srclin -i assets/textures/raw/wear_mask.png -o assets/textures/wear_mask.ktx2
 
-# From Chris:
+# TODO: from Chris:
 
 # ktx create --format R8G8B8_UNORM --assign-tf linear --layers 3 assets/raw_assets/floor_graph_normal_map.png assets/raw_assets/grass_graph_normal_map.png assets/raw_assets/stone_graph_normal_map.png $'($target)/uncompressed_normal_map.ktx2'
 # ~/resources/kram-macos/kram encode -f bc5 -type 2darray -normal -o $'($target)/normal_map.ktx2' -i $'($target)/uncompressed_normal_map.ktx2'

@@ -1,11 +1,8 @@
-use std::f32::consts::FRAC_PI_2;
-
 use bevy::{
     asset::io::embedded::GetAssetServer,
     camera_controller::free_camera::{FreeCamera, FreeCameraPlugin},
     gltf::{GltfLoaderSettings, GltfPlugin, convert_coordinates::GltfConvertCoordinates},
     image::{ImageAddressMode, ImageLoaderSettings, ImageSamplerDescriptor},
-    mesh::{SphereKind, SphereMeshBuilder},
     pbr::{Atmosphere, ExtendedMaterial, MaterialExtension, MeshMaterial3d, ScatteringMedium},
     post_process::bloom::Bloom,
     prelude::*,
