@@ -26,17 +26,10 @@ struct BlendedPbrIndices {
     material: u32,
     mask: u32,
     mask_sampler: u32,
-    base_color_texture_index: u32,
-    base_color_sampler_index: u32,
-    normal_texture_index: u32,
-    normal_sampler_index: u32,
-    arm_texture_index: u32,
-    arm_sampler_index: u32,
 }
 
 struct BlendedPbr {
-    // unused for now :)
-    strength: f32,
+    _unused: f32,
 }
 
 

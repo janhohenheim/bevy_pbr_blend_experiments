@@ -18,30 +18,16 @@ static SHADER_ASSET_PATH: &str = "shader.wgsl";
 
 #[derive(Asset, Clone, Reflect, AsBindGroup)]
 #[data(50, GpuBlendedPbr, binding_array(101))]
-#[bindless(index_table(range(50..59), binding(100)))]
+#[bindless(index_table(range(50..53), binding(100)))]
 struct BlendedPbr {
-    strength: f32,
-
     #[texture(51)]
     #[sampler(52)]
     mask: Option<Handle<Image>>,
-
-    #[texture(53, dimension = "2d_array")]
-    #[sampler(54)]
-    base_color_texture: Option<Handle<Image>>,
-
-    #[texture(55, dimension = "2d_array")]
-    #[sampler(56)]
-    normal_texture: Option<Handle<Image>>,
-
-    #[texture(57, dimension = "2d_array")]
-    #[sampler(58)]
-    arm_texture: Option<Handle<Image>>,
 }
 
 #[derive(Clone, Default, ShaderType)]
 struct GpuBlendedPbr {
-    strength: f32,
+    _unused: f32,
 }
 
 impl MaterialExtension for BlendedPbr {
@@ -51,10 +37,8 @@ impl MaterialExtension for BlendedPbr {
 }
 
 impl<'a> From<&'a BlendedPbr> for GpuBlendedPbr {
-    fn from(material_extension: &'a BlendedPbr) -> Self {
-        GpuBlendedPbr {
-            strength: material_extension.strength,
-        }
+    fn from(_material_extension: &'a BlendedPbr) -> Self {
+        GpuBlendedPbr { _unused: 0.0 }
     }
 }
 
@@ -207,13 +191,7 @@ fn process_assets(
                                     ..default()
                                 },
                                 extension: BlendedPbr {
-                                    strength: 0.75,
                                     mask: Some(app_assets.wear_mask.clone()),
-                                    base_color_texture: Some(
-                                        assets.load("textures/base_color.ktx2"),
-                                    ),
-                                    normal_texture: Some(assets.load("textures/normal.ktx2")),
-                                    arm_texture: Some(assets.load("textures/arm.ktx2")),
                                 },
                             })));
                     }

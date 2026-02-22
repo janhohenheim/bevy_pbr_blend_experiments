@@ -61,4 +61,4 @@ kram encode \
   -o assets/textures/wear_mask.ktx2 \
   -i assets/temp/wear_mask.ktx2
 
-# rm -r assets/temp/
+rm -r assets/temp/
