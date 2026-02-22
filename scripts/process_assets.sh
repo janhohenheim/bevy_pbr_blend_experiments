@@ -20,8 +20,9 @@ kram encode \
 
 # Normals
 ktx create \
-  --format R8G8B8_UNORM \
+  --format R8G8_UNORM \
   --assign-tf linear \
+  --normal-mode \
   --layers 2 \
   assets/textures/raw/brick_normal.png \
   assets/textures/raw/render_normal.png \
@@ -33,6 +34,17 @@ kram encode \
   -normal \
   -o assets/textures/normal.ktx2 \
   -i assets/temp/normal.ktx2
+
+# Alternative for keeping 16 bit precision (didn't figure out how to compress this one tho)
+# ktx create \
+#   --format R16G16_UNORM \
+#   --assign-tf linear \
+#   --normal-mode \
+#   --generate-mipmap \
+#   --layers 2 \
+#   assets/textures/raw/brick_normal.png \
+#   assets/textures/raw/render_normal.png \
+#   assets/textures/normal.ktx2
 
 # Linear
 ktx create \

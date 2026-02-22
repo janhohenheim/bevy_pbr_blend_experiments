@@ -93,6 +93,12 @@ struct AppAssets {
     level: Handle<Gltf>,
     #[dependency]
     wear_mask: Handle<Image>,
+    #[dependency]
+    base_color_texture: Handle<Image>,
+    #[dependency]
+    normal_map_texture: Handle<Image>,
+    #[dependency]
+    arm_texture: Handle<Image>,
 }
 
 impl FromWorld for AppAssets {
@@ -111,6 +117,23 @@ impl FromWorld for AppAssets {
                     "textures/wear_mask.ktx2",
                     |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
                 )
+                .into(),
+            base_color_texture: assets
+                .load_with_settings(
+                    "textures/base_color.ktx2",
+                    |settings: &mut ImageLoaderSettings| settings.is_srgb = true,
+                )
+                .into(),
+            normal_map_texture: assets
+                .load_with_settings(
+                    "textures/normal.ktx2",
+                    |settings: &mut ImageLoaderSettings| settings.is_srgb = false,
+                )
+                .into(),
+            arm_texture: assets
+                .load_with_settings("textures/arm.ktx2", |settings: &mut ImageLoaderSettings| {
+                    settings.is_srgb = false
+                })
                 .into(),
         }
     }
