@@ -12,6 +12,7 @@ use bevy::{
     utils::default,
 };
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
+use bevy_layered_materials::{LayeredMaterial, LayeredMaterialsPlugin};
 
 static SHADER_ASSET_PATH: &str = "shader.wgsl";
 
@@ -89,8 +90,9 @@ fn main() {
         ))
         .add_plugins(EguiPlugin::default())
         .add_plugins(WorldInspectorPlugin::new())
+        .add_plugins(LayeredMaterialsPlugin)
         .add_plugins(MaterialPlugin::<
-            ExtendedMaterial<StandardMaterial, BlendedPbr>,
+            ExtendedMaterial<LayeredMaterial, BlendedPbr>,
         >::default())
         .add_systems(Update, load_assets)
         .add_systems(Update, fuck)
@@ -189,8 +191,17 @@ fn process_assets(
                             .entity(entity)
                             .remove::<MeshMaterial3d<StandardMaterial>>()
                             .insert(MeshMaterial3d(assets.add(ExtendedMaterial {
-                                base: StandardMaterial {
-                                    base_color: Color::WHITE,
+                                base: LayeredMaterial {
+                                    base_color_texture: Some(
+                                        assets.load("textures/base_color.ktx2"),
+                                    ),
+                                    normal_map_texture: Some(assets.load("textures/normal.ktx2")),
+                                    /*
+                                    metallic_roughness_texture: Some(
+                                        assets.load("textures/arm.ktx2"),
+                                    ),
+                                    occlusion_texture: Some(assets.load("textures/arm.ktx2")),
+                                     */
                                     perceptual_roughness: 1.0,
                                     metallic: 1.0,
                                     ..default()
