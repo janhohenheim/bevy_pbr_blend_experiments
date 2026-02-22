@@ -83,6 +83,7 @@ fn main() {
         .init_asset::<AppAssets>()
         .add_observer(process_assets)
         .add_observer(setup_camera)
+        .add_observer(setup_directional_light)
         .insert_resource(GlobalAmbientLight::NONE)
         .run();
 }
@@ -238,8 +239,18 @@ fn setup_camera(
         Atmosphere::earthlike(scatter_media.add(ScatteringMedium::default())),
         PointLight {
             shadows_enabled: true,
-            intensity: 10_000.0,
+            intensity: 100_000.0,
             ..default()
         },
     ));
+}
+
+fn setup_directional_light(
+    add: On<Add, DirectionalLight>,
+    mut directional_lights: Query<&mut DirectionalLight>,
+) {
+    let Ok(mut directional_light) = directional_lights.get_mut(add.entity) else {
+        return;
+    };
+    directional_light.shadows_enabled = true;
 }

@@ -709,7 +709,7 @@ pbr_input.material.uv_transform = uv_transform;
 #ifdef MESHLET_MESH_MATERIAL_PASS
             textureSampleGrad(
 #else   // MESHLET_MESH_MATERIAL_PASS
-            laplace_blend(
+            normalize(laplace_blend(
 #endif  // MESHLET_MESH_MATERIAL_PASS
 #ifdef BINDLESS
                 bindless_textures_2d_array[material_indices[slot].normal_map_texture],
@@ -724,7 +724,7 @@ pbr_input.material.uv_transform = uv_transform;
                 mask_sampler,
                 uv_b,
                 bias.mip_bias,
-            ).rgb;
+            ).rgb);
 
         pbr_input.N = pbr_functions::apply_normal_mapping(flags, TBN, double_sided, is_front, Nt);
 
