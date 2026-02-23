@@ -407,30 +407,24 @@ pbr_input.material.uv_transform = uv_transform;
 #ifdef VERTEX_UVS
         if ((flags & pbr_types::STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT) != 0u) {
             let metallic_roughness =
-#ifdef MESHLET_MESH_MATERIAL_PASS
+    #ifdef MESHLET_MESH_MATERIAL_PASS
                 textureSampleGrad(
-#else   // MESHLET_MESH_MATERIAL_PASS
-                textureSampleBias(
-#endif  // MESHLET_MESH_MATERIAL_PASS
-#ifdef BINDLESS
-                    bindless_textures_2d[material_indices[slot].metallic_roughness_texture],
+    #else   // MESHLET_MESH_MATERIAL_PASS
+                laplace_blend(
+    #endif  // MESHLET_MESH_MATERIAL_PASS
+    #ifdef BINDLESS
+                    bindless_textures_2d_array[material_indices[slot].metallic_roughness_texture],
                     bindless_samplers_filtering[material_indices[slot].metallic_roughness_sampler],
-#else   // BINDLESS
+    #else   // BINDLESS
                     pbr_bindings::metallic_roughness_texture,
                     pbr_bindings::metallic_roughness_sampler,
-#endif  // BINDLESS
-#ifdef STANDARD_MATERIAL_METALLIC_ROUGHNESS_UV_B
-                    uv_b,
-#else
+    #endif  // BINDLESS
                     uv,
-#endif
-#ifdef MESHLET_MESH_MATERIAL_PASS
-                    bias.ddx_uv,
-                    bias.ddy_uv,
-#else   // MESHLET_MESH_MATERIAL_PASS
+                    mask_texture,
+                    mask_sampler,
+                    uv_b,
                     bias.mip_bias,
-#endif  // MESHLET_MESH_MATERIAL_PASS
-                );
+            );
             // Sampling from GLTF standard channels for now
             metallic *= metallic_roughness.b;
             perceptual_roughness *= metallic_roughness.g;
@@ -654,30 +648,24 @@ pbr_input.material.uv_transform = uv_transform;
 #ifdef VERTEX_UVS
         if ((flags & pbr_types::STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT) != 0u) {
             diffuse_occlusion *=
-#ifdef MESHLET_MESH_MATERIAL_PASS
+    #ifdef MESHLET_MESH_MATERIAL_PASS
                 textureSampleGrad(
-#else   // MESHLET_MESH_MATERIAL_PASS
-                textureSampleBias(
-#endif  // MESHLET_MESH_MATERIAL_PASS
-#ifdef BINDLESS
-                    bindless_textures_2d[material_indices[slot].occlusion_texture],
+    #else   // MESHLET_MESH_MATERIAL_PASS
+                laplace_blend(
+    #endif  // MESHLET_MESH_MATERIAL_PASS
+    #ifdef BINDLESS
+                    bindless_textures_2d_array[material_indices[slot].occlusion_texture],
                     bindless_samplers_filtering[material_indices[slot].occlusion_sampler],
-#else   // BINDLESS
+    #else   // BINDLESS
                     pbr_bindings::occlusion_texture,
                     pbr_bindings::occlusion_sampler,
-#endif  // BINDLESS
-#ifdef STANDARD_MATERIAL_OCCLUSION_UV_B
-                    uv_b,
-#else
+    #endif  // BINDLESS
                     uv,
-#endif
-#ifdef MESHLET_MESH_MATERIAL_PASS
-                    bias.ddx_uv,
-                    bias.ddy_uv,
-#else   // MESHLET_MESH_MATERIAL_PASS
+                    mask_texture,
+                    mask_sampler,
+                    uv_b,
                     bias.mip_bias,
-#endif  // MESHLET_MESH_MATERIAL_PASS
-                ).r;
+            ).r;
         }
 #endif
 #ifdef SCREEN_SPACE_AMBIENT_OCCLUSION

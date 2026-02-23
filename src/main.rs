@@ -204,12 +204,10 @@ fn process_assets(
                                         assets.load("textures/base_color.ktx2"),
                                     ),
                                     normal_map_texture: Some(assets.load("textures/normal.ktx2")),
-                                    /*
                                     metallic_roughness_texture: Some(
                                         assets.load("textures/arm.ktx2"),
                                     ),
                                     occlusion_texture: Some(assets.load("textures/arm.ktx2")),
-                                     */
                                     perceptual_roughness: 1.0,
                                     metallic: 1.0,
                                     ..default()

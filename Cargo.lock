@@ -1062,9 +1062,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_layered_materials"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "180e6743bb63e49459970faa2f4ccb1309797546bac11a2dde997a2deb048d03"
+checksum = "cc1ebb2b9b5fe677354e9eb542870ee3a41f4dae4aa12ee5605785846032480b"
 dependencies = [
  "bevy_app",
  "bevy_asset",
