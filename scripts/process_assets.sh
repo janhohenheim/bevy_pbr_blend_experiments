@@ -6,8 +6,8 @@ ktx create \
   --format R8G8B8A8_SRGB \
   --assign-tf srgb \
   --layers 2 \
-  assets/textures/raw/brick_basecolor.png \
   assets/textures/raw/render_basecolor.png \
+  assets/textures/raw/brick_basecolor.png \
   assets/temp/uncompressed_base_color.ktx2
 
 kram encode \
@@ -24,8 +24,8 @@ ktx create \
   --assign-tf linear \
   --normal-mode \
   --layers 2 \
-  assets/textures/raw/brick_normal.png \
   assets/textures/raw/render_normal.png \
+  assets/textures/raw/brick_normal.png \
   assets/temp/normal.ktx2
 
 kram encode \
@@ -51,8 +51,8 @@ ktx create \
   --format R8G8B8_UNORM \
   --assign-tf linear \
   --layers 2 \
-  assets/textures/raw/brick_arm.png \
   assets/textures/raw/render_arm.png \
+  assets/textures/raw/brick_arm.png \
   assets/temp/arm.ktx2
 kram encode \
   -f bc7 \
